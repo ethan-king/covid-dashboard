@@ -8,14 +8,16 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
+import dash_bootstrap_components as dbc
+
 import pandas as pd
 
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+# external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
 
 
@@ -62,10 +64,14 @@ for index, row in table.iterrows():
 	myDict['label'] = row['County seat'] + ', ' + row['State']
 	myDict['value'] = row['County'] + ',' + row['State']
 	options.append(myDict)
-
-# LAYOUT
 app.layout = html.Div([
-	html.H1('U.S. Counties Covid-19 Tracker'),
+	# html.H1('U.S. Counties Covid-19 Tracker'),
+	dbc.NavbarSimple(
+		children=[],
+		brand="U.S. Counties Covid-19 Tracker",
+		color='primary',
+		dark=True
+	),
 	html.Div(
 		[
 			html.H3('Select your county:', style={'paddingRight': '30px'}),
@@ -75,7 +81,7 @@ app.layout = html.Div([
 				options= options,
 				multi=True
 			)
-		], style={'display': 'inline-block', 'verticalAlign': 'top', 'width': '30%'}
+		], style={'display': 'inline-block', 'verticalAlign': 'top', 'width': '30%', 'paddingLeft': '10px'}
 	),
 	html.Div(
 		[
@@ -99,21 +105,44 @@ app.layout = html.Div([
 		],
 		style={'display': 'inline-block'}
 	),
-	dcc.Graph(
-		id='my_graph',
-		figure = {
-			'data': [{'x':[1,2], 'y':[3,1]}],
-			'layout': {'title':'Default Title'}
-		}
+	html.Div(
+		[
+			dcc.Graph(
+				id='my_graph',
+				figure = {
+					'data': [{'x':[1,2], 'y':[3,1]}],
+					'layout': {'title':'Default Title'}
+				}
+			),
+		],
+		style={'height':'50%'}
 	),
+	html.Div(
+		[
+			dcc.Graph(
+				id='mortality_graph',
+				figure= {
+					'data': [{'x':[1,2], 'y':[3,1]}],
+					'layout': {'title':'Default Title'}
+				}
+			),
+		],
+		style={'height':'20%'}
+	),
+	html.P('This dashboard uses data from The New York Times, based on reports from state and local health agencies.')
 ])
+
+# LAYOUT
 
 # TODO: create a density map of covid cases to use for timeseries input selection for counties
 
 
 # update dashboard
 @app.callback(
-	Output('my_graph','figure'),
+	[
+		Output('my_graph','figure'),
+		Output('mortality_graph', 'figure')
+	],
 	[Input('submit-button','n_clicks')],
 	[
 		State('state_county_picker','value'),
@@ -128,12 +157,14 @@ def update_graph(n_clicks, state_county, start_date, end_date):
 	#create traces for each item in state_county
 	#TODO: add a trendline for the past two weeks
 	traces = []
+	tracesMortality=[]
 	titleNames= []
 	colorTracker = 0
 	for item in state_county:
 		countyStateList = item.split(',')
 		df = covid[(covid['date'] >= start) & (covid['date']<= end)]
 		df = df[(df['state'] == countyStateList[1]) & (df['county'] == countyStateList[0])]
+		df['mortality rate'] = df['deaths'] / df['cases']
 		# print(df.head())
 		if (countyStateList[0] in CITIES_NO_COUNTIES):
 			name = countyStateList[0] + ' - ' + countyStateList[1]
@@ -141,14 +172,21 @@ def update_graph(n_clicks, state_county, start_date, end_date):
 			name = countyStateList[0] + ' County - ' + countyStateList[1]
 		traces.append({'x':df['date'], 'y':df['cases'], 'name': name + ' Cases', 'line': dict(color=COLOR_LIST[colorTracker % COLOR_LIST_LEN])})
 		traces.append({'x':df['date'], 'y':df['deaths'], 'name': name + ' Deaths', 'line': dict(color=COLOR_LIST[colorTracker % COLOR_LIST_LEN], dash='dash')})
+		tracesMortality.append({'x':df['date'], 'y':df['mortality rate'], 'name': name + ' Mortality', 'line': dict(color=COLOR_LIST[colorTracker % COLOR_LIST_LEN])})
 		titleNames.append(name)
 		colorTracker += 1
 
 	fig = {
 		'data': traces,
-		'layout': {'title': ", ".join(titleNames)}
+		'layout': {'title': "Cases and Deaths"}
 	}
-	return fig
+
+	figMortality = {
+		'data': tracesMortality,
+		'layout': {'title': "Mortality Rate", 'showlegend':True, 'height':300}
+
+	}
+	return fig, figMortality
 
 if __name__ == '__main__':
 	app.run_server()
