@@ -1,1 +1,17 @@
-# covid-dashboard
+# Covid-19 Tracker for Counties in the U.S. 
+
+This project allows users to track Coronavirus infection rates in their immediate surrounding area using Plotly Dash. The data used is updated daily by [The New York Times]('https://github.com/nytimes/covid-19-data).
+
+---
+## Running
+This dashboard can be run locally, requiring dash and dash-bootstrap-components.
+After running the python script, you can connect to the dashboard locally via http://127.0.0.1:8050/
+
+
+## Next Steps
+Hosting on the cloud
+ 
+## Change suggestions and comments
+- submit a GitHub issue
+- submit a pull request
+- [Email](king.ethan@gmail.com)
