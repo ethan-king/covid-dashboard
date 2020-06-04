@@ -11,7 +11,7 @@ After running the python script, you can connect to the dashboard locally via ht
 ## Next Steps
 Hosting on the cloud
  
-## Change suggestions and comments
+## Suggestions and comments
 - submit a GitHub issue
 - submit a pull request
-- [Email](king.ethan@gmail.com)
+- [Email]('mailto:king.ethan@gmail.com')
