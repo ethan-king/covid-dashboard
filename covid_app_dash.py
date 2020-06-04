@@ -122,7 +122,7 @@ app.layout = html.Div(
 							#style={'fontSize':24, 'marginLeft':'30px', 'marginTop': '5px'}
 						)
 					],
-					style={'display': 'inline-block'}
+					style={'display': 'inline-block', 'paddingLeft': '30px'}
 				),
 				html.Div(
 					[
