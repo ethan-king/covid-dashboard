@@ -1,5 +1,5 @@
 """
-This plotly dash app displays the latest Covid-19 infection numbers.
+This plotly dash app displays the latest Covid-19 infection numbers by U.S. county.
 
 """
 from datetime import datetime
@@ -12,12 +12,14 @@ import dash_bootstrap_components as dbc
 
 import pandas as pd
 
+from stateCounties import stateCountyData
+
 pd.set_option('display.max_rows', 500)
 pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.LITERA])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
 
 # COLOR LIST - use this color list to force county cases + death color to match
 COLOR_LIST = [
@@ -28,18 +30,26 @@ COLOR_LIST = [
 COLOR_LIST_LEN = len(COLOR_LIST)
 
 # read data
-covidDTypes = {'county': str, 'state': str, 'fips': str, 'cases': int, 'deaths': int}
-covid = pd.read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv', dtype= covidDTypes, parse_dates=[0])
-COVID_DATE_MIN = covid['date'].min()
-COVID_DATE_MAX = covid['date'].max()
+COVID_DTYPES = {'county': str, 'state': str, 'fips': str, 'cases': int, 'deaths': int}
+NYT_REPO = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv'
 
-# clean covid data
-covid = covid.loc[~(covid['county']=='Unknown')]
+def readToDf(url, dTypes):
+	'''
+	read NY Times covid-19 county data into a dataframe and clear unknown counties
+	:param url:
+	:param dTypes:
+	:return:
+	'''
+	df = pd.read_csv(url, dtype=dTypes, parse_dates=[0])
+	df = df.loc[~(df['county']=='Unknown')]
+	return df
+
+covid = readToDf(NYT_REPO,COVID_DTYPES)
+
 CITIES_NO_COUNTIES = ['New York City', 'Kansas City']
 
-
 # multidropdown options for state / county selection
-stateCounty = covid.groupby(['state', 'county']).min().reset_index().drop(columns=['fips', 'cases', 'deaths']).dropna()
+stateCounty = pd.read_json(stateCountyData, dtype=COVID_DTYPES)
 options = []
 for index, row in stateCounty.iterrows():
 	#{'Label': 'user sees', 'Value': 'script sees')
@@ -84,7 +94,8 @@ app.layout = html.Div(
 						html.H3('Select your county:', style={'paddingRight': '30px'}),
 						dcc.Dropdown(
 							id='state_county_picker',
-							value=['New York City,New York'],
+							value=['Bergen,New Jersey', 'Hudson,New Jersey', 'Essex,New Jersey', 'Passaic,New Jersey',
+								'Middlesex,New Jersey'],
 							options= options,
 							multi=True
 						)
@@ -95,10 +106,10 @@ app.layout = html.Div(
 						html.H3('Select a start and end date:'),
 						dcc.DatePickerRange(
 							id='my_date_picker',
-							min_date_allowed=COVID_DATE_MIN,
-							max_date_allowed=COVID_DATE_MAX,
-							start_date=COVID_DATE_MIN,
-							end_date=COVID_DATE_MAX)
+							min_date_allowed=datetime.strptime('2020-01-21', '%Y-%m-%d'),
+							max_date_allowed=datetime.today(),
+							start_date=datetime.strptime('2020-01-21', '%Y-%m-%d'),
+							end_date=datetime.today())
 					], style={'display': 'inline-block', 'paddingLeft': '30px'}
 				),
 				html.Div(
@@ -122,7 +133,7 @@ app.layout = html.Div(
 							}
 						),
 					],
-					style={'height':'50%'}
+					style={'height':'45%'}
 				),
 				html.Div(
 					[
@@ -134,10 +145,20 @@ app.layout = html.Div(
 							}
 						),
 					],
-					style={'height':'20%'}
+					style={'height':'15%'}
 				),
-				html.A('king.ethan@gmail.com', href='mailto:king.ethan@gmail.com'),
+				html.P(
+					children='Last data refresh:',
+					id='data-last-refresh'
+				),
+
+
+				# Footer
+				html.P('email: ',style={'display':'inline-block'}),
+				html.A('king.ethan@gmail.com', href='mailto:king.ethan@gmail.com', style={'display':'inline-block'}),
 				html.P('This dashboard uses data from The New York Times, based on reports from state and local health agencies.'),
+
+				# Hidden components
 				dcc.Interval(
 					id='interval-component',
 					interval= 86400000,
@@ -145,7 +166,8 @@ app.layout = html.Div(
 				),
 				html.Div(
 					id='saved-data',
-					style={'display':'none'}
+					style={'display':'none'},
+					children=''
 				)
 
 			], style={'paddingLeft': '10px', 'paddingTop': '10px'}
@@ -153,7 +175,14 @@ app.layout = html.Div(
 	]
 )
 
-
+# refresh data daily
+@app.callback(Output('data-last-refresh', 'children'), [Input('interval-component', 'n_intervals')])
+def refresh_covid_data(n):
+	global covid
+	covid = readToDf(NYT_REPO,COVID_DTYPES)
+	now = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p EDT')
+	status = f'Last data refresh: {now}'
+	return status
 
 
 # update dashboard
@@ -166,13 +195,15 @@ app.layout = html.Div(
 	[
 		State('state_county_picker','value'),
 		State('my_date_picker', 'start_date'),
-		State('my_date_picker', 'end_date')
+		State('my_date_picker', 'end_date'),
+		State('saved-data', 'children')
 	]
 )
-def update_graph(n_clicks, state_county, start_date, end_date):
+def update_graph(n_clicks, state_county, start_date, end_date, saved_df_json):
 	start = datetime.strptime(start_date[:10], '%Y-%m-%d')
 	end = datetime.strptime(end_date[:10], '%Y-%m-%d')
-
+	# read saved df json
+	# covid = pd.read_json(saved_df_json, dtype=COVID_DTYPES)
 	#create traces for each item in state_county
 	#TODO: add a trendline for the past two weeks
 	traces = []
@@ -197,19 +228,16 @@ def update_graph(n_clicks, state_county, start_date, end_date):
 
 	fig = {
 		'data': traces,
-		'layout': {'title': "Cases and Deaths"}
+		'layout': {'title': "Cases and Deaths", 'height': 450}
 	}
 
 	figMortality = {
 		'data': tracesMortality,
-		'layout': {'title': "Mortality Rate", 'showlegend':True, 'height':300}
+		'layout': {'title': "Mortality Rate", 'showlegend':True, 'height': 300}
 
 	}
 	return fig, figMortality
 
-@app.callback(Output('saved-data', 'children'), [Input('interval-component', 'n_intervals')])
-def refresh_covid_data(n):
-	pass
 
 
 if __name__ == '__main__':
