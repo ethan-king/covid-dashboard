@@ -20,6 +20,8 @@ pd.set_option('display.width', 1000)
 
 # external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MATERIA])
+app.title = 'U.S. Counties Covid-19 Dashboard'
+
 server = app.server
 
 # COLOR LIST - use this color list to force county cases + death color to match
@@ -37,9 +39,9 @@ NYT_REPO = 'https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-co
 def readToDf(url, dTypes):
 	'''
 	read NY Times covid-19 county data into a dataframe and clear unknown counties
-	:param url:
-	:param dTypes:
-	:return:
+	:param url: string - github repo url
+	:param dTypes: dict key = col, val = dtype
+	:return: cleaned NYT dataframe
 	'''
 	df = pd.read_csv(url, dtype=dTypes, parse_dates=[0])
 	df = df.loc[~(df['county']=='Unknown')]
@@ -47,9 +49,10 @@ def readToDf(url, dTypes):
 
 covid = readToDf(NYT_REPO,COVID_DTYPES)
 
-CITIES_NO_COUNTIES = ['New York City', 'Kansas City']
 
 # multidropdown options for state / county selection
+CITIES_NO_COUNTIES = ['New York City', 'Kansas City']
+
 stateCounty = pd.read_json(stateCountyData, dtype=COVID_DTYPES)
 options = []
 for index, row in stateCounty.iterrows():
@@ -66,27 +69,24 @@ for index, row in stateCounty.iterrows():
 table = pd.read_html('https://en.wikipedia.org/wiki/List_of_the_most_populous_counties_in_the_United_States')[0].dropna()
 table = table[~(table['County seat'].str.contains('NYC'))]
 table = table[~(table['County seat'].str.contains('Kansas City'))]
-
 for index, row in table.iterrows():
 	myDict = {}
 	myDict['label'] = row['County seat'] + ', ' + row['State']
 	myDict['value'] = row['County'] + ',' + row['State']
 	options.append(myDict)
 
-
 # LAYOUT
 app.layout = html.Div(
 	[
-		# html.H1('U.S. Counties Covid-19 Tracker'),
 		dbc.NavbarSimple(
 			children=[
 				html.P('')
 			],
-			brand="U.S. Counties Covid-19 Tracker",
-			# brand_style={'text-align': 'left'},
+			brand="U.S. Counties Covid-19 Dashboard",
+			# style={'padding-left': 30},
 			# fluid=False,
 			color='primary',
-			dark=True
+			dark=True,
 		),
 		html.Div(
 			[
@@ -209,6 +209,7 @@ def update_graph(n_clicks, state_county, start_date, end_date, saved_df_json):
 	#TODO: add a trendline for the past two weeks
 	traces = []
 	tracesMortality=[]
+	tracesDelta = []
 	titleNames= []
 	colorTracker = 0
 	for item in state_county:
@@ -229,12 +230,12 @@ def update_graph(n_clicks, state_county, start_date, end_date, saved_df_json):
 
 	fig = {
 		'data': traces,
-		'layout': {'title': "Cases and Deaths", 'height': 450}
+		'layout': {'title': "Cases and Deaths", 'height': 400}
 	}
 
 	figMortality = {
 		'data': tracesMortality,
-		'layout': {'title': "Mortality Rate", 'showlegend':True, 'height': 300}
+		'layout': {'title': "Mortality Rate", 'showlegend':True, 'height': 275}
 
 	}
 	return fig, figMortality
