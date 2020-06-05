@@ -92,7 +92,7 @@ app.layout = html.Div(
 			[
 				html.Div(
 					[
-						html.H3('Select your county:', style={'paddingRight': '30px'}),
+						html.H3('County and State selection:', style={'paddingRight': '30px'}),
 						dcc.Dropdown(
 							id='state_county_picker',
 							value=['Bergen,New Jersey', 'Hudson,New Jersey', 'Essex,New Jersey', 'Passaic,New Jersey',
