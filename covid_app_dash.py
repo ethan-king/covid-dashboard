@@ -155,7 +155,7 @@ app.layout = html.Div(
 
 
 				# Footer
-				html.P('email: ',style={'display':'inline-block'}),
+				html.P('Suggestions, comments? Email: ',style={'display':'inline-block'}),
 				html.A('king.ethan@gmail.com', href='mailto:king.ethan@gmail.com', style={'display':'inline-block'}),
 				html.P('This dashboard uses data from The New York Times, based on reports from state and local health agencies.'),
 
@@ -181,7 +181,7 @@ app.layout = html.Div(
 def refresh_covid_data(n):
 	global covid
 	covid = readToDf(NYT_REPO,COVID_DTYPES)
-	now = datetime.now().strftime('%Y-%m-%d %I:%M:%S %p EDT')
+	now = datetime.now().astimezone().strftime('%Y-%m-%d %I:%M:%S %p %Z %z')
 	status = f'Last data refresh: {now}'
 	return status
 
