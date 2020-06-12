@@ -124,6 +124,7 @@ app.layout = html.Div(
 					],
 					style={'display': 'inline-block', 'paddingLeft': '30px'}
 				),
+				html.P('Five boroughs of New York City are combined. Four counties that overlap Kansas City are combined.', style={'font-size': 'smaller'}),
 				html.Div(
 					[
 						dcc.Graph(
@@ -208,7 +209,8 @@ def update_graph(n_clicks, state_county, start_date, end_date, saved_df_json):
 	#create traces for each item in state_county
 	#TODO: add a trendline for the past two weeks
 	traces = []
-	tracesMortality=[]
+	tracesMortality= []
+	tracesBase100= []
 	tracesDelta = []
 	titleNames= []
 	colorTracker = 0
@@ -227,6 +229,8 @@ def update_graph(n_clicks, state_county, start_date, end_date, saved_df_json):
 		tracesMortality.append({'x':df['date'], 'y':df['mortality rate'], 'name': name + ' Mortality', 'line': dict(color=COLOR_LIST[colorTracker % COLOR_LIST_LEN])})
 		titleNames.append(name)
 		colorTracker += 1
+
+	# get df with timeseries for all counties
 
 	fig = {
 		'data': traces,
