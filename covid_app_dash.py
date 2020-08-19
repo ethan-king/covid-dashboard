@@ -9,6 +9,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
+import dash_table
 
 import pandas as pd
 
@@ -66,7 +67,7 @@ for index, row in stateCounty.iterrows():
 	options.append(myDict)
 
 # add options for us cities: 'label': 'city, state', 'value': 'county, state'
-table = pd.read_html('https://en.wikipedia.org/wiki/List_of_the_most_populous_counties_in_the_United_States')[0].dropna()
+table = pd.read_html('https://en.wikipedia.org/wiki/List_of_the_most_populous_counties_in_the_United_States', header=1)[0].dropna()
 table = table[~(table['County seat'].str.contains('NYC'))]
 table = table[~(table['County seat'].str.contains('Kansas City'))]
 for index, row in table.iterrows():
@@ -90,12 +91,27 @@ app.layout = html.Div(
 		),
 		html.Div(
 			[
+				# html.Div(
+				# 	[
+				# 		dash_table.DataTable(
+				# 			id='top10_daily',
+				# 			columns=[{"name": i, "id": i} for i in df.columns],
+				# 			data=df.to_dict('records'),
+				# 		),
+				# 		dash_table.DataTable(
+				# 			id='top10_weekly',
+				# 			columns=[{"name": i, "id": i} for i in df.columns],
+				# 			data=df.to_dict('records'),
+				# 		),
+				# 	]
+				# ),
+
 				html.Div(
 					[
 						html.H3('County and State selection:', style={'paddingRight': '30px'}),
 						dcc.Dropdown(
 							id='state_county_picker',
-							value=['Bergen,New Jersey', 'Hudson,New Jersey', 'Essex,New Jersey', 'Passaic,New Jersey',
+							value=['New York City,New York', 'Hudson,New Jersey', 'Essex,New Jersey', 'Passaic,New Jersey',
 								'Middlesex,New Jersey'],
 							options= options,
 							multi=True
